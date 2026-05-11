@@ -114,7 +114,7 @@ async def test_query_returns_answer_and_confidence(
 ):
     from unittest.mock import AsyncMock, patch
 
-    monkeypatch.setattr("app.services.query_engine.query_ollama", AsyncMock(
+    monkeypatch.setattr("app.services.query_engine.generate_response", AsyncMock(
         return_value="You had a meeting today."
     ))
     monkeypatch.setattr("app.services.reranker.rerank", lambda query, candidates, top_k: [

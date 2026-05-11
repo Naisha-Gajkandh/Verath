@@ -1,7 +1,7 @@
 import logging
 from typing import List
 from datetime import datetime
-from app.services.llm import ask_llm
+from app.services.groq_service import generate_response
 from app.services.timeline import get_today_timeline, get_recent_timeline
 from app.core.logging_config import logger
 
@@ -34,7 +34,7 @@ Include:
 Provide a concise, insightful summary (2-3 paragraphs):
 """
         
-        return ask_llm(prompt)
+        return await generate_response(prompt)
     except Exception as e:
         logger.error(f"Error generating daily summary: {e}", exc_info=True)
         return "Unable to generate summary at this time."
@@ -67,7 +67,7 @@ Focus on:
 Provide a clear, actionable summary (2-3 paragraphs):
 """
         
-        return ask_llm(prompt)
+        return await generate_response(prompt)
     except Exception as e:
         logger.error(f"Error generating period summary: {e}", exc_info=True)
         return "Unable to generate summary at this time."
@@ -108,7 +108,7 @@ Focus on:
 Return as a bulleted list, one insight per line:
 """
         
-        response = ask_llm(prompt)
+        response = await generate_response(prompt)
         
         # Split into lines and clean up
         lines = [line.strip().lstrip('-').lstrip('*').strip() for line in response.split('\n') if line.strip()]

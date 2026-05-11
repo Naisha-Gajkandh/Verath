@@ -122,9 +122,9 @@ def mock_chroma(monkeypatch):
 # ── Embedding mock ────────────────────────────────────────────────────────────
 @pytest.fixture
 def mock_embedding(monkeypatch):
-    """Returns a deterministic fake embedding so tests don't call Ollama."""
+    """Returns a deterministic fake embedding so tests don't call Gemini."""
     monkeypatch.setattr(
-        "app.services.embedding.get_embedding",
+        "app.services.gemini_embedding.get_embedding",
         lambda text: [0.1] * 768
     )
     monkeypatch.setattr(

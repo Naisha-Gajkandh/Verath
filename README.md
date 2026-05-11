@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Ollama](https://img.shields.io/badge/LLM-Ollama-blue.svg)](https://ollama.ai/)
+[![Groq](https://img.shields.io/badge/LLM-Groq-orange.svg)](https://groq.com/)
 [![Whisper](https://img.shields.io/badge/STT-Whisper-black.svg)](https://github.com/openai/whisper)
 [![React Native](https://img.shields.io/badge/Mobile-React%20Native-61DAFB.svg?style=flat&logo=react&logoColor=white)](https://reactnative.dev/)
 [![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248.svg?style=flat&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
@@ -37,7 +37,7 @@ Verath is an AI-powered personal memory system that transforms raw audio and tex
 - **Hybrid RAG (Retrieval-Augmented Generation)** with cross-encoder re-ranking for accurate, grounded responses
 - **Memory Lifecycle Management** with automatic compression, archival, and retrieval optimization
 - **Multi-Platform Support** including mobile (React Native) and web dashboards
-- **Local-First Privacy** with Ollama running locally—no data leaves your machine by default
+- **Local-First Privacy** with Groq/Gemini running locally—no data leaves your machine by default
 - **Reminder System** with automatic date extraction and alert scheduling
 - **Background Processing** with async task queue, retry logic, and dead-letter handling
 - **Speaker Identification** with voice profile training and diarization
@@ -92,7 +92,7 @@ Verath follows a microservices-inspired architecture with three main components:
          ┌───────────────────────┼───────────────────────┐
          │                       │                       │
     ┌────▼────┐           ┌─────▼─────┐          ┌──────▼──────┐
-    │ MongoDB │           │ ChromaDB  │          │   Ollama    │
+    │ MongoDB │           │ ChromaDB  │          │   Groq      │
     │ (Metadata)│         │ (Vectors) │          │  (LLM+Embed)│
     └─────────┘           └───────────┘          └─────────────┘
 ```
@@ -123,7 +123,7 @@ Importance Scoring (with intent-based boosting)
     ↓
 Summary Generation (LLM-powered)
     ↓
-Embedding Generation (Ollama nomic-embed-text)
+Embedding Generation (Gemini text-embedding-004)
     ↓
 Dual Storage (MongoDB + ChromaDB)
 ```
@@ -143,7 +143,7 @@ Cross-Encoder Re-ranking (select top 5)
     ↓
 Context Building (format for LLM)
     ↓
-LLM Generation (Ollama mistral)
+LLM Generation (Groq llama-3.3-70b-versatile)
     ↓
 Answer + Sources + Confidence
 ```
@@ -156,7 +156,7 @@ Answer + Sources + Confidence
 
 - **Framework**: FastAPI 0.104+ with Uvicorn
 - **Speech Recognition**: faster-whisper (Whisper models: tiny, base, small, medium, large)
-- **LLM & Embeddings**: Ollama (mistral, nomic-embed-text)
+- **LLM**: Groq (llama-3.3-70b), **Embeddings**: Gemini (text-embedding-004)
 - **Vector Database**: ChromaDB 0.4.22 with HNSW indexing
 - **Document Database**: MongoDB with Motor (async driver)
 - **Task Queue**: AsyncIO queue with MongoDB-backed tracking
@@ -227,10 +227,10 @@ Verath/
 │   │   │   ├── audio.py              # Audio recording
 │   │   │   ├── auth.py               # Authentication service
 │   │   │   ├── database.py           # Database operations
-│   │   │   ├── embedding.py          # Vector embeddings (Ollama)
+│   │   │   ├── gemini_embedding.py   # Vector embeddings (Gemini)
 │   │   │   ├── importance.py         # Importance scoring
 │   │   │   ├── listener.py           # Always-on voice listener
-│   │   │   ├── llm.py                # Ollama integration
+│   │   │   ├── groq_service.py       # Groq integration
 │   │   │   ├── memory_extractor.py   # Intelligent extraction with corrections
 │   │   │   ├── memory_graph.py       # Memory relationship graph
 │   │   │   ├── memory_store.py       # MongoDB + ChromaDB storage
@@ -906,7 +906,8 @@ Navigate to `http://localhost:8080`
 - **Python 3.11+** - Backend runtime
 - **Node.js 18+** - Mobile app development
 - **MongoDB 6.0+** - Data storage (local or Atlas)
-- **Ollama** - Local LLM inference
+- **Groq** - Cloud LLM inference
+- **Gemini** - Cloud embeddings inference
 - **Git** - Version control
 
 ### Installation
@@ -947,7 +948,6 @@ cp .env.example .env
 # Required settings:
 # - MONGO_URI: MongoDB connection string
 # - SECRET_KEY: Random secret key for JWT (min 32 chars)
-# - OLLAMA_URL: Ollama server URL (default: http://localhost:11434)
 ```
 
 Example `.env` file:
@@ -959,13 +959,8 @@ Example `.env` file:
 GROQ_API_KEY=           # console.groq.com — free, 30 RPM
 GEMINI_API_KEY=         # aistudio.google.com — free, generous limits
 
-# Embeddings (Ollama OR Gemini)
-EMBED_PROVIDER=ollama   # 'ollama' or 'gemini'
-OLLAMA_URL=http://localhost:11434
-EMBED_MODEL=nomic-embed-text
-
-# Legacy Ollama Settings (kept for compatibility)
-MODEL_NAME=mistral
+# Embeddings
+EMBED_PROVIDER=gemini
 
 # Whisper Settings
 WHISPER_MODEL=base
@@ -1078,7 +1073,6 @@ The dashboard will be available at `http://localhost:8080`
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `OLLAMA_URL` | Ollama server URL | `http://localhost:11434` | No |
 | `MODEL_NAME` | LLM model name | `mistral` | No |
 | `EMBED_MODEL` | Embedding model name | `nomic-embed-text` | No |
 | `WHISPER_MODEL` | Whisper model size | `base` | No |
@@ -1092,22 +1086,9 @@ The dashboard will be available at `http://localhost:8080`
 | `DATABASE_NAME` | MongoDB database name | `Verath` | No |
 | `SECRET_KEY` | JWT secret key (min 32 chars) | - | Yes |
 
-### Ollama Configuration
+### Groq & Gemini Configuration
 
-The project uses two Ollama models:
-
-1. **mistral**: For text generation, summarization, and query answering
-2. **nomic-embed-text**: For vector embeddings
-
-#### Install Models
-```bash
-ollama pull mistral
-ollama pull nomic-embed-text
-```
-
-#### Verify Installation
-```bash
-ollama list
+Ensure you have valid API keys for both Groq and Gemini.
 ```
 
 ### Whisper Model Configuration
@@ -1315,17 +1296,6 @@ eas submit --platform android
 4. Check network connectivity
 5. Test connection: `mongosh "mongodb+srv://..."`
 
-### Ollama Connection Issues
-
-**Problem**: Connection refused or timeout to Ollama
-
-**Solutions**:
-1. Ensure Ollama is running: `ollama serve`
-2. Check the URL in `.env`: `OLLAMA_URL=http://localhost:11434`
-3. Verify models are installed: `ollama list`
-4. Check firewall settings
-5. Test Ollama directly: `curl http://localhost:11434/api/tags`
-
 ### Whisper Model Issues
 
 **Problem**: Slow transcription or model errors
@@ -1383,11 +1353,9 @@ eas submit --platform android
 
 **"Database not connected"**: Check MongoDB connection string and ensure MongoDB is running
 
-**"Ollama not responding"**: Ensure Ollama is running with `ollama serve`
 
 **"Authentication failed"**: Verify SECRET_KEY is set and consistent
 
-**"Model not found"**: Pull required Ollama models with `ollama pull <model>`
 
 **"SECRET_KEY must be at least 32 characters"**: Generate a longer key:
 ```bash
@@ -1442,7 +1410,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙏 Acknowledgments
 
 - **OpenAI Whisper** for state-of-the-art speech recognition
-- **Ollama** for local LLM inference and embeddings
+- **Groq** and **Gemini** for LLM inference and embeddings
 - **ChromaDB** for efficient vector storage
 - **FastAPI** for the modern web framework
 - **React Native & Expo** for cross-platform mobile development

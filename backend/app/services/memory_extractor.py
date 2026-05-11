@@ -2,7 +2,7 @@ import re
 import logging
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
-from app.services.llm import ask_llm
+from app.services.groq_service import generate_response
 from app.core.exceptions import LLMError
 
 logger = logging.getLogger("Verath")
@@ -137,7 +137,7 @@ class MemoryExtractor:
         
         return text
     
-    def summarize_memory(self, text: str, intent: Optional[str] = None) -> str:
+    async def summarize_memory(self, text: str, intent: Optional[str] = None) -> str:
         """Generate a concise summary of the memory using LLM."""
         intent_context = f" Intent: {intent}" if intent else ""
         
@@ -148,7 +148,7 @@ Text: "{text}"
 Return only the summary sentence, nothing else."""
         
         try:
-            summary = ask_llm(prompt)
+            summary = await generate_response(prompt)
             return summary.strip()
         except Exception as e:
             logger.error(f"Error generating summary: {e}")
@@ -186,7 +186,7 @@ Return only the summary sentence, nothing else."""
         
         return len(intersection) / len(union) if union else 0.0
     
-    def extract_memory(self, text: str) -> Dict:
+    async def extract_memory(self, text: str) -> Dict:
         """
         Extract structured memory from raw text.
         Returns: {
@@ -214,7 +214,7 @@ Return only the summary sentence, nothing else."""
         entities = self.extract_entities(cleaned_text)
         
         # Generate summary
-        summary = self.summarize_memory(cleaned_text, intent)
+        summary = await self.summarize_memory(cleaned_text, intent)
         
         # Calculate importance boost based on intent and entities
         importance_boost = self._calculate_importance_boost(intent, entities)

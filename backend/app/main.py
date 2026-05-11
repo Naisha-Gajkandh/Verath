@@ -48,7 +48,7 @@ async def warm_chroma_collections():
         import chromadb
         from chromadb.config import Settings as ChromaSettings
         from app.config import settings
-        from app.services.embedding import get_embedding
+        from app.services.gemini_embedding import get_embedding
         
         chroma_client = chromadb.PersistentClient(
             path=settings.vector_db_path,
@@ -222,17 +222,16 @@ async def status():
     except Exception as e:
         health_status["services"]["chromadb"] = f"unhealthy: {str(e)}"
 
-    # Check Ollama
+    # Check Groq
     try:
-        import httpx
-        async with httpx.AsyncClient() as client:
-            response = await client.get(f"{settings.ollama_url}/api/tags", timeout=2.0)
-            if response.status_code == 200:
-                health_status["services"]["ollama"] = "healthy"
-            else:
-                health_status["services"]["ollama"] = "unhealthy"
+        from app.services.groq_service import client
+        response = await client.models.list()
+        if response:
+            health_status["services"]["groq"] = "healthy"
+        else:
+            health_status["services"]["groq"] = "unhealthy"
     except Exception as e:
-        health_status["services"]["ollama"] = f"unhealthy: {str(e)}"
+        health_status["services"]["groq"] = f"unhealthy: {str(e)}"
 
     # Overall status
     if all(v == "healthy" for v in health_status["services"].values()):

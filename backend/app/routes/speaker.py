@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.models.schema import VoiceTrainRequest
-from app.services.embedding import get_embedding
+from app.services.gemini_embedding import get_embedding
 from app.services.speaker_training import add_voice, get_voice_profiles
 
 router = APIRouter()
@@ -17,4 +17,4 @@ def train_voice(payload: VoiceTrainRequest):
 
 @router.get("/profiles")
 def list_profiles():
-    return {"profiles": list(get_voice_profiles().keys())}
+    return {"profiles": get_voice_profiles()}

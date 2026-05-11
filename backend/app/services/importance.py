@@ -1,7 +1,7 @@
-from app.services.llm import ask_llm
+from app.services.groq_service import generate_response
 import re
 
-def score_importance(text: str) -> float:
+async def score_importance(text: str) -> float:
     """Score importance of text from 0 to 1 using LLM."""
     prompt = f"""
 Rate the importance of this text from 0.0 to 1.0:
@@ -19,7 +19,7 @@ Return only a number between 0.0 and 1.0.
 """
     
     try:
-        response = ask_llm(prompt)
+        response = await generate_response(prompt)
         # Extract numeric value from response
         numbers = re.findall(r'0\.\d+|1\.0|0|1', response)
         if numbers:

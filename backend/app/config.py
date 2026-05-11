@@ -54,10 +54,7 @@ class Settings(BaseSettings):
     gemini_model: str = Field(default="gemini-1.5-flash", description="Gemini model to use")
     llm_timeout: int = Field(default=30, description="LLM request timeout in seconds")
     
-    # ── Legacy Ollama (kept for compatibility) ──────────────────────────────────
-    ollama_url: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
-    model_name: str = "mistral"
-    embed_model: str = "nomic-embed-text"
+    embed_provider: str = Field(default="gemini", description="Embeddings provider")
 
     # ── Whisper ───────────────────────────────────────────────────────────────
     whisper_model: str = "base"

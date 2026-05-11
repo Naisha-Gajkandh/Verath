@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from app.services.memory_store import search_memories
 from app.services.reranker import rerank
-from app.services.llm import ask_llm
+from app.services.groq_service import generate_response
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ async def run_query(
     Full RAG pipeline:
       1. Retrieve N candidates from ChromaDB by vector similarity
       2. Re-rank with cross-encoder
-      3. Build a grounded prompt and call Ollama
+      3. Build a grounded prompt and call Groq
       4. Return answer, sources, and confidence_score
     """
 
@@ -66,7 +66,7 @@ async def run_query(
 
     # ── Step 4: LLM call ──────────────────────────────────────────────────────
     try:
-        answer = ask_llm(prompt)
+        answer = await generate_response(prompt)
     except Exception as e:
         logger.error(f"LLM call failed: {e}")
         answer = "I found relevant memories but couldn't generate a response right now."

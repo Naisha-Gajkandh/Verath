@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 
 import chromadb
@@ -8,7 +8,7 @@ from chromadb.config import Settings as ChromaSettings
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.config import settings
-from app.services.embedding import get_embedding, get_embeddings_batch
+from app.services.gemini_embedding import get_embedding, get_embeddings_batch
 
 logger = logging.getLogger(__name__)
 
@@ -282,7 +282,7 @@ async def get_memory_stats(user_id: str) -> Dict[str, Any]:
         }}
     ]
     
-    from datetime import timedelta
+    
     async for doc in col.aggregate(pipeline_extras):
         for item in doc.get("by_intent", []):
             if item["_id"]: stats["by_intent"][item["_id"]] = item["count"]

@@ -3,7 +3,7 @@ import re
 import dateparser
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
-from app.services.llm import ask_llm
+from app.services.groq_service import generate_response
 from app.core.logging_config import logger
 
 class ExtractionPipeline:
@@ -243,7 +243,7 @@ Format as JSON:
 }}"""
         
         try:
-            response = ask_llm(prompt)
+            response = await generate_response(prompt)
             # Parse LLM response (simple JSON extraction)
             # In production, use proper JSON parsing with error handling
             return self._parse_llm_response(response)

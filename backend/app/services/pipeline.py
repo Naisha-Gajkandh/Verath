@@ -5,7 +5,7 @@ from typing import Optional
 
 from app.models.memory import Memory
 from app.services.transcription import transcribe
-from app.services.embedding import get_embedding
+from app.services.gemini_embedding import get_embedding
 from app.services.memory_store import store_memory
 from app.services.importance import score_importance, categorize_importance
 from app.services.speaker import identify_speakers, get_primary_speaker
@@ -34,7 +34,7 @@ async def process_audio(file_path: str, user_id: str, timestamp: Optional[str] =
         logger.info(f"Transcribed: {text[:100]}...")
         
         # Intelligent memory extraction
-        extraction_result = memory_extractor.extract_memory(text)
+        extraction_result = await memory_extractor.extract_memory(text)
         cleaned_text = extraction_result['cleaned_text']
         intent = extraction_result['intent']
         entities = extraction_result['entities']
@@ -47,7 +47,7 @@ async def process_audio(file_path: str, user_id: str, timestamp: Optional[str] =
         primary_speaker = get_primary_speaker(speakers)
         
         # Score importance with boost
-        base_importance = score_importance(cleaned_text)
+        base_importance = await score_importance(cleaned_text)
         final_importance = min(base_importance + importance_boost, 1.0)
         importance_category = categorize_importance(final_importance)
         

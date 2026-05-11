@@ -5,7 +5,7 @@ from typing import Dict, List
 import numpy as np
 
 from app.config import settings
-from app.services.embedding import get_embedding
+from app.services.gemini_embedding import get_embedding
 
 os.makedirs(os.path.dirname(settings.voice_db_path), exist_ok=True)
 
@@ -17,7 +17,7 @@ if os.path.exists(VOICE_DB_JSON):
         data = json.load(file)
         voice_profiles: Dict[str, List[float]] = {k: v for k, v in data.items()}
 else:
-    voice_profiles = {}
+    voice_profiles: Dict[str, List[float]] = {}
 
 
 def save():
