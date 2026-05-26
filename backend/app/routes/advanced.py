@@ -57,8 +57,8 @@ async def timeline(
         return {"timeline": [], "pagination": {"total": 0, "page": page, "page_size": page_size, "total_pages": 0}}
 
 
-@cached(ttl_seconds=900, key_prefix="insights")  # 15 minutes cache
 @router.get("/insights")
+@cached(ttl_seconds=900, key_prefix="insights")
 async def insights(user_id: str = Depends(get_current_user_id)):
     """Extract key insights from memories."""
     try:
