@@ -18,7 +18,7 @@ async def process_audio(file_path: str, user_id: str, timestamp: Optional[str] =
     """Process audio file through the complete pipeline with intelligent extraction."""
     try:
         # Check privacy mode
-        if is_private(user_id):
+        if await is_private(user_id):
             logger.info("Privacy mode enabled - skipping processing")
             return None
         
@@ -53,7 +53,7 @@ async def process_audio(file_path: str, user_id: str, timestamp: Optional[str] =
         
         # Try to map label to a trained voice profile using text embedding
         from app.services.speaker_training import identify_voice
-        identified_name = identify_voice(embedding)
+        identified_name = identify_voice(user_id, embedding)
         
         if identified_name != "unknown":
             primary_speaker = identified_name

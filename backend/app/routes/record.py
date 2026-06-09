@@ -36,6 +36,26 @@ async def record(payload: RecordRequest, user_id: str = Depends(get_current_user
         logger.error(f"Unexpected error in record: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal processing error")
 
+ALLOWED_AUDIO_MIME_TYPES = {
+    "audio/wav",
+    "audio/wave",
+    "audio/x-wav",
+    "audio/mpeg",
+    "audio/mp3",
+    "audio/mp4",
+    "audio/webm",
+    "audio/ogg",
+    "audio/flac",
+    "audio/x-flac",
+    "audio/aac",
+    "audio/x-m4a",
+}
+
+ALLOWED_AUDIO_EXTENSIONS = {
+    ".wav", ".mp3", ".mp4", ".webm", ".ogg", ".flac", ".aac", ".m4a"
+}
+
+
 @router.post("/record/upload")
 async def upload_record(
     file: UploadFile = File(...),
@@ -45,15 +65,57 @@ async def upload_record(
     """Process an audio file uploaded from the mobile app."""
     try:
         logger.info(f"Received audio upload from user {user_id}")
-        
+
+        # Validate MIME type — reject non-audio files before writing to disk
+        content_type = (file.content_type or "").lower().split(";")[0].strip()
+        if content_type not in ALLOWED_AUDIO_MIME_TYPES:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Unsupported file type '{content_type}'. "
+                       f"Allowed types: {', '.join(sorted(ALLOWED_AUDIO_MIME_TYPES))}",
+            )
+
+        # Validate file extension as a second layer of defence
+        file_ext = Path(file.filename or "").suffix.lower()
+        if file_ext not in ALLOWED_AUDIO_EXTENSIONS:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Unsupported file extension '{file_ext}'. "
+                       f"Allowed extensions: {', '.join(sorted(ALLOWED_AUDIO_EXTENSIONS))}",
+            )
+
         # Create a temporary path for the uploaded file
         temp_dir = Path("data/uploads")
         temp_dir.mkdir(parents=True, exist_ok=True)
-        
-        file_path = temp_dir / f"upload_{user_id}_{os.urandom(4).hex()}.wav"
-        
+
+        # Enforce a 50MB file size limit — read the entire upload into
+        # memory in chunks before writing to disk so oversized files are
+        # rejected without filling the disk. shutil.copyfileobj has no
+        # size limit and would write gigabytes before any check ran.
+        MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
+        chunks = []
+        total_bytes = 0
+        chunk_size = 64 * 1024  # 64 KB read buffer
+
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            total_bytes += len(chunk)
+            if total_bytes > MAX_UPLOAD_BYTES:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File too large. Maximum allowed size is "
+                           f"{MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
+                )
+            chunks.append(chunk)
+
+        file_ext = Path(file.filename or "").suffix.lower() or ".wav"
+        file_path = temp_dir / f"upload_{user_id}_{os.urandom(4).hex()}{file_ext}"
+
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            for chunk in chunks:
+                buffer.write(chunk)
             
         # Process the saved file, timestamp
         memory = await process_audio(str(file_path), user_id, timestamp=timestamp)
